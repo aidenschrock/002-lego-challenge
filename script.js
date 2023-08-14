@@ -23,16 +23,30 @@ let brickModel = null;
 function addBrick() {
   gltfLoader.load("/static/brick.glb", (gltf) => {
     brickModel = gltf.scene;
+    brickModel.name = "brick";
     brickModel.scale.set(0.5, 0.5, 0.5);
     brickModel.position.x = (Math.random() - 0.5) * 6;
+    brickModel.position.y = 2.2;
     scene.add(brickModel);
   });
 }
 
-// gltfLoader.load("/static/brick.glb", (gltf) => {
-//   gltf.scene.position.x = -3;
-//   scene.add(gltf.scene);
-// });
+let footModel = null;
+gltfLoader.load("/static/foot.glb", (gltf) => {
+  footModel = gltf.scene;
+  footModel.scale.set(0.4, 0.4, 0.4);
+  footModel.rotation.y = 1.4;
+  footModel.position.y = -1.6;
+  scene.add(footModel);
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowLeft") {
+    footModel.position.x -= 0.2;
+  } else if (event.key === "ArrowRight") {
+    footModel.position.x += 0.2;
+  }
+});
 
 // Sizes
 const sizes = {
@@ -78,15 +92,32 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 // Animate
 const clock = new THREE.Clock();
 
-// window.setInterval(() => {
-//   addBrick();
-// }, 1000);
+window.setInterval(() => {
+  addBrick();
+}, 1000);
+
+const manageBlocks = () => {
+  scene.traverse((child) => {
+    if (child.name === "brick") {
+      child.position.y += -0.02;
+    }
+  });
+  deleteBlock();
+};
+
+const deleteBlock = () => {
+  let sceneArray = scene.children;
+  for (let i = 0; i < sceneArray.length; i++) {
+    if (sceneArray[i].name === "brick" && sceneArray[i].position.y <= -1.7) {
+      scene.remove(sceneArray[i]);
+    }
+  }
+};
 
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-  if (brickModel) {
-    brickModel.position.y += -0.01;
-  }
+
+  manageBlocks();
 
   // Update controls
   controls.update();
