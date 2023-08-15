@@ -4,6 +4,7 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper.js";
 import * as dat from "lil-gui";
 import * as CANNON from "cannon-es";
+import CannonDebugger from "cannon-es-debugger";
 
 // Debug
 const gui = new dat.GUI();
@@ -37,7 +38,7 @@ gui.add(rectAreaLight, "intensity").min(0).max(5).step(0.02);
 
 // Physics
 const world = new CANNON.World();
-world.gravity.set(0, -9.82, 0);
+world.gravity.set(0, -1, 0);
 world.broadphase = new CANNON.SAPBroadphase(world);
 world.allowSleep = true;
 
@@ -56,8 +57,25 @@ world.defaultContactMaterial = defaultContactMaterial;
 
 const objectsToUpdate = [];
 
+let score = 100;
+
 const hitEffects = (collision) => {
-  console.log("hit");
+  // console.log(footModel.position, footObject.body.position);
+  console.log(collision);
+  // console.log(collision);
+  // let sceneArray = scene.children;
+  // for (let i = 0; i < sceneArray.length; i++) {
+  //   if (sceneArray[i].name === "brick" && sceneArray[i].position.y <= -1.) {
+  //     for (let j = 0; j < objectsToUpdate.length; j++) {
+  //       if (objectsToUpdate[j].brickId === sceneArray[i].uuid) {
+  //         objectsToUpdate[j].body.removeEventListener("collide", hitEffects);
+  //         world.removeBody(objectsToUpdate[j].body);
+  //         objectsToUpdate.splice(j, 1);
+  //       }
+  //     }
+  //     scene.remove(sceneArray[i]);
+  //   }
+  // }
 };
 
 // GLTF Loader
@@ -71,24 +89,27 @@ function addBrick() {
     brickModel.rotation.x = -3;
     brickModel.scale.set(0.2, 0.2, 0.2);
     brickModel.position.x = (Math.random() - 0.5) * 8;
-    brickModel.position.y = 2.2;
+    brickModel.position.y = 2.2 + Math.random() * (3 - 2.2);
     scene.add(brickModel);
 
-    const halfExtents = new CANNON.Vec3(brickModel.position);
-
-    const shape = new CANNON.Box(halfExtents);
+    const shape = new CANNON.Box(new CANNON.Vec3(0.1, 0.1, 0.1));
     const body = new CANNON.Body({
       mass: 1,
-      position: new CANNON.Vec3(0, 3, 0),
+      position: new CANNON.Vec3(
+        brickModel.position.x,
+        brickModel.position.y,
+        0
+      ),
       shape: shape,
       material: defaultMaterial,
     });
-    body.addEventListener("collide", hitEffects);
+    // body.addEventListener("collide", hitEffects);
     world.addBody(body);
 
     let brickId = brickModel.uuid;
+    let brickPosition = brickModel.position;
 
-    objectsToUpdate.push({ brickId, body });
+    objectsToUpdate.push({ brickPosition, brickId, body });
   });
 }
 
@@ -101,11 +122,9 @@ gltfLoader.load("/static/foot.glb", (gltf) => {
   footModel.position.y = -1.6;
   scene.add(footModel);
 
-  const halfExtents = new CANNON.Vec3(footModel.position);
-
-  const shape = new CANNON.Box(halfExtents);
+  const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.1, 0.2));
   const body = new CANNON.Body({
-    position: new CANNON.Vec3(0, 3, 0),
+    position: new CANNON.Vec3(footModel.position.x, -1.6, 0),
     shape: shape,
   });
   body.addEventListener("collide", hitEffects);
@@ -119,10 +138,10 @@ gltfLoader.load("/static/foot.glb", (gltf) => {
 window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft") {
     footModel.position.x -= 0.2;
-    footObject.body.position.x -= 0.2;
+    footObject.body.position.copy(footModel.position);
   } else if (event.key === "ArrowRight") {
     footModel.position.x += 0.2;
-    footObject.body.position.x += 0.2;
+    footObject.body.position.copy(footModel.position);
   }
 });
 
@@ -172,19 +191,26 @@ const clock = new THREE.Clock();
 
 window.setInterval(() => {
   addBrick();
-}, 700);
+}, 1000);
 
 const manageBlocks = () => {
-  scene.traverse((child) => {
-    if (child.name === "brick") {
-      child.position.y += -0.02;
-      for (let i = 0; i < objectsToUpdate.length; i++) {
-        if (objectsToUpdate[i].brickId === child.uuid) {
-          objectsToUpdate[i].body.position.y += -0.02;
-        }
-      }
-    }
-  });
+  // scene.traverse((child) => {
+  //   if (child.name === "brick") {
+  //     child.position.y += -0.02;
+  //     for (let i = 0; i < objectsToUpdate.length; i++) {
+  //       if (objectsToUpdate[i].brickId === child.uuid) {
+  //         objectsToUpdate[i].body.position.y += -0.02;
+  //       }
+  //     }
+  //   }
+  // });
+
+  for (const object of objectsToUpdate) {
+    object.brickPosition.copy(object.body.position);
+    // console.log(object.brick.position, object.body.position);
+  }
+
+  // console.log(objectsToUpdate);
   deleteBlock();
 };
 
@@ -204,13 +230,22 @@ const deleteBlock = () => {
   }
 };
 
+const cannonDebugger = new CannonDebugger(scene, world);
+
+let oldElapsedTime = 0;
+
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
+  const deltaTime = elapsedTime - oldElapsedTime;
+  oldElapsedTime = elapsedTime;
 
+  world.step(1 / 60, deltaTime, 3);
   manageBlocks();
 
   // Update controls
   controls.update();
+
+  cannonDebugger.update();
 
   // Render
   renderer.render(scene, camera);
