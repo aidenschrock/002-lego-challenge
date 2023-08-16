@@ -3,8 +3,6 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper.js";
 import * as dat from "lil-gui";
-import * as CANNON from "cannon-es";
-import CannonDebugger from "cannon-es-debugger";
 
 // Debug
 const gui = new dat.GUI();
@@ -36,46 +34,10 @@ scene.add(rectAreaLightHelper);
 scene.add(lowerRectAreaLightHelper);
 gui.add(rectAreaLight, "intensity").min(0).max(5).step(0.02);
 
-// Physics
-const world = new CANNON.World();
-world.gravity.set(0, -1, 0);
-world.broadphase = new CANNON.SAPBroadphase(world);
-world.allowSleep = true;
-
-const defaultMaterial = new CANNON.Material("default");
-const defaultContactMaterial = new CANNON.ContactMaterial(
-  defaultMaterial,
-  defaultMaterial,
-  {
-    friction: 0.1,
-    restitution: 0.7,
-  }
-);
-
-world.addContactMaterial(defaultContactMaterial);
-world.defaultContactMaterial = defaultContactMaterial;
-
-const objectsToUpdate = [];
-
 let score = 100;
 
 const hitEffects = (collision) => {
-  // console.log(footModel.position, footObject.body.position);
-  console.log(collision);
   // console.log(collision);
-  // let sceneArray = scene.children;
-  // for (let i = 0; i < sceneArray.length; i++) {
-  //   if (sceneArray[i].name === "brick" && sceneArray[i].position.y <= -1.) {
-  //     for (let j = 0; j < objectsToUpdate.length; j++) {
-  //       if (objectsToUpdate[j].brickId === sceneArray[i].uuid) {
-  //         objectsToUpdate[j].body.removeEventListener("collide", hitEffects);
-  //         world.removeBody(objectsToUpdate[j].body);
-  //         objectsToUpdate.splice(j, 1);
-  //       }
-  //     }
-  //     scene.remove(sceneArray[i]);
-  //   }
-  // }
 };
 
 // GLTF Loader
@@ -91,57 +53,23 @@ function addBrick() {
     brickModel.position.x = (Math.random() - 0.5) * 8;
     brickModel.position.y = 2.2 + Math.random() * (3 - 2.2);
     scene.add(brickModel);
-
-    const shape = new CANNON.Box(new CANNON.Vec3(0.1, 0.1, 0.1));
-    const body = new CANNON.Body({
-      mass: 1,
-      position: new CANNON.Vec3(
-        brickModel.position.x,
-        brickModel.position.y,
-        0
-      ),
-      shape: shape,
-      material: defaultMaterial,
-    });
-    // body.addEventListener("collide", hitEffects);
-    world.addBody(body);
-
-    let brickId = brickModel.uuid;
-    let brickPosition = brickModel.position;
-
-    objectsToUpdate.push({ brickPosition, brickId, body });
   });
 }
 
 let footModel = null;
-let footObject = null;
 gltfLoader.load("/static/foot.glb", (gltf) => {
   footModel = gltf.scene;
   footModel.scale.set(0.2, 0.2, 0.2);
   footModel.rotation.y = 1.4;
   footModel.position.y = -1.6;
   scene.add(footModel);
-
-  const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.1, 0.2));
-  const body = new CANNON.Body({
-    position: new CANNON.Vec3(footModel.position.x, -1.6, 0),
-    shape: shape,
-  });
-  body.addEventListener("collide", hitEffects);
-  world.addBody(body);
-
-  let footId = footModel.uuid;
-
-  footObject = { footId, body };
 });
 
 window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft") {
     footModel.position.x -= 0.2;
-    footObject.body.position.copy(footModel.position);
   } else if (event.key === "ArrowRight") {
     footModel.position.x += 0.2;
-    footObject.body.position.copy(footModel.position);
   }
 });
 
@@ -194,21 +122,11 @@ window.setInterval(() => {
 }, 1000);
 
 const manageBlocks = () => {
-  // scene.traverse((child) => {
-  //   if (child.name === "brick") {
-  //     child.position.y += -0.02;
-  //     for (let i = 0; i < objectsToUpdate.length; i++) {
-  //       if (objectsToUpdate[i].brickId === child.uuid) {
-  //         objectsToUpdate[i].body.position.y += -0.02;
-  //       }
-  //     }
-  //   }
-  // });
-
-  for (const object of objectsToUpdate) {
-    object.brickPosition.copy(object.body.position);
-    // console.log(object.brick.position, object.body.position);
-  }
+  scene.traverse((child) => {
+    if (child.name === "brick") {
+      child.position.y += -0.02;
+    }
+  });
 
   // console.log(objectsToUpdate);
   deleteBlock();
@@ -218,34 +136,18 @@ const deleteBlock = () => {
   let sceneArray = scene.children;
   for (let i = 0; i < sceneArray.length; i++) {
     if (sceneArray[i].name === "brick" && sceneArray[i].position.y <= -1.7) {
-      for (let j = 0; j < objectsToUpdate.length; j++) {
-        if (objectsToUpdate[j].brickId === sceneArray[i].uuid) {
-          objectsToUpdate[j].body.removeEventListener("collide", hitEffects);
-          world.removeBody(objectsToUpdate[j].body);
-          objectsToUpdate.splice(j, 1);
-        }
-      }
       scene.remove(sceneArray[i]);
     }
   }
 };
 
-const cannonDebugger = new CannonDebugger(scene, world);
-
-let oldElapsedTime = 0;
-
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
-  const deltaTime = elapsedTime - oldElapsedTime;
-  oldElapsedTime = elapsedTime;
 
-  world.step(1 / 60, deltaTime, 3);
   manageBlocks();
 
   // Update controls
   controls.update();
-
-  cannonDebugger.update();
 
   // Render
   renderer.render(scene, camera);
