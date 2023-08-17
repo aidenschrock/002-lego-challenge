@@ -16,10 +16,6 @@ const canvas = document.querySelector("canvas.webgl");
 const scene = new THREE.Scene();
 
 // Lights
-// const ambientLight = new THREE.AmbientLight(0xffffff, 2);
-// scene.add(ambientLight);
-// gui.add(ambientLight, "intensity").min(0).max(1).step(0.001);
-
 const rectAreaLight = new THREE.RectAreaLight(0xffffff, 1, 5, 5);
 rectAreaLight.position.set(-1, 1, 1.5);
 rectAreaLight.lookAt(0, 0, 0);
@@ -55,27 +51,30 @@ const defaultContactMaterial = new CANNON.ContactMaterial(
 world.addContactMaterial(defaultContactMaterial);
 world.defaultContactMaterial = defaultContactMaterial;
 
+// Initialize array for brick models
 const objectsToUpdate = [];
 
-let score = 100;
-
+// Function to run on collision of foot with brick
+let collidingBrick = null;
 const hitEffects = (collision) => {
-  // console.log(footModel.position, footObject.body.position);
-  console.log(collision);
-  // console.log(collision);
-  // let sceneArray = scene.children;
-  // for (let i = 0; i < sceneArray.length; i++) {
-  //   if (sceneArray[i].name === "brick" && sceneArray[i].position.y <= -1.) {
-  //     for (let j = 0; j < objectsToUpdate.length; j++) {
-  //       if (objectsToUpdate[j].brickId === sceneArray[i].uuid) {
-  //         objectsToUpdate[j].body.removeEventListener("collide", hitEffects);
-  //         world.removeBody(objectsToUpdate[j].body);
-  //         objectsToUpdate.splice(j, 1);
-  //       }
-  //     }
-  //     scene.remove(sceneArray[i]);
-  //   }
-  // }
+  let sceneArray = scene.children;
+
+  for (const object of objectsToUpdate) {
+    if (collision.body.id === object.brickId) {
+      collidingBrick = object;
+    }
+  }
+
+  for (let i = 0; i < sceneArray.length; i++) {
+    if (sceneArray[i].uuid === collidingBrick.brickId) {
+      console.log("here");
+
+      collidingBrick.body.removeEventListener("collide", hitEffects);
+      world.removeBody(collidingBrick.body);
+      // objectsToUpdate.splice(collision.body.id, 1);
+      scene.remove(sceneArray[i]);
+    }
+  }
 };
 
 // GLTF Loader
@@ -103,11 +102,12 @@ function addBrick() {
       shape: shape,
       material: defaultMaterial,
     });
-    // body.addEventListener("collide", hitEffects);
+
     world.addBody(body);
 
     let brickId = brickModel.uuid;
     let brickPosition = brickModel.position;
+    body.id = brickId;
 
     objectsToUpdate.push({ brickPosition, brickId, body });
   });
@@ -127,7 +127,9 @@ gltfLoader.load("/static/foot.glb", (gltf) => {
     position: new CANNON.Vec3(footModel.position.x, -1.6, 0),
     shape: shape,
   });
-  body.addEventListener("collide", hitEffects);
+  body.addEventListener("collide", function (e) {
+    setTimeout(hitEffects(e));
+  });
   world.addBody(body);
 
   let footId = footModel.uuid;
@@ -135,6 +137,7 @@ gltfLoader.load("/static/foot.glb", (gltf) => {
   footObject = { footId, body };
 });
 
+// User controls for foot model
 window.addEventListener("keydown", (event) => {
   if (event.key === "ArrowLeft") {
     footModel.position.x -= 0.2;
@@ -194,23 +197,10 @@ window.setInterval(() => {
 }, 1000);
 
 const manageBlocks = () => {
-  // scene.traverse((child) => {
-  //   if (child.name === "brick") {
-  //     child.position.y += -0.02;
-  //     for (let i = 0; i < objectsToUpdate.length; i++) {
-  //       if (objectsToUpdate[i].brickId === child.uuid) {
-  //         objectsToUpdate[i].body.position.y += -0.02;
-  //       }
-  //     }
-  //   }
-  // });
-
   for (const object of objectsToUpdate) {
     object.brickPosition.copy(object.body.position);
-    // console.log(object.brick.position, object.body.position);
   }
 
-  // console.log(objectsToUpdate);
   deleteBlock();
 };
 
