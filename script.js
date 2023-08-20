@@ -6,6 +6,9 @@ import * as dat from "lil-gui";
 import * as CANNON from "cannon-es";
 import CannonDebugger from "cannon-es-debugger";
 import { SRGBColorSpace } from "three";
+import typefaceFont from "three/examples/fonts/helvetiker_regular.typeface.json";
+import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
+import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 // Debug
 const gui = new dat.GUI();
@@ -14,7 +17,7 @@ const gui = new dat.GUI();
 const canvas = document.querySelector("canvas.webgl");
 
 let worldParamaters = {
-  color: new THREE.Color(0xd3c5cb),
+  color: new THREE.Color(0xe49bb6),
 };
 // Scene
 const scene = new THREE.Scene();
@@ -24,20 +27,69 @@ gui.addColor(worldParamaters, "color").onChange(() => {
   scene.background = worldParamaters.color;
 });
 
-//Load background texture
-// const loader = new THREE.TextureLoader();
-// loader.load("/static/play-mat.jpg", function (texture) {
-//   console.log(texture);
-//   scene.background = texture;
-// });
+// Background Text
+const textureLoader = new THREE.TextureLoader();
+const fontLoader = new FontLoader();
+const material = new THREE.MeshMatcapMaterial();
+const matcapTexture = textureLoader.load("/static/matcaps/4.png");
+material.matcap = matcapTexture;
 
+fontLoader.load("/static/fonts/brix.typeface.json", (font) => {
+  const textConfig = {
+    font: font,
+    size: 0.5,
+    height: 0.2,
+    // curveSegments: 10,
+    // bevelEnabled: true,
+    // bevelThickness: 0.03,
+    // bevelSize: 0.02,
+    // bevelOffset: 0,
+    // bevelSegments: 3,
+  };
+
+  const playTextGeometry = new TextGeometry("P L A Y", textConfig);
+  const pTextGeometry = new TextGeometry("P", textConfig);
+  const lTextGeometry = new TextGeometry("L", textConfig);
+  const aTextGeometry = new TextGeometry("A", textConfig);
+  const yTextGeometry = new TextGeometry("Y", textConfig);
+
+  const textMaterial = new THREE.MeshStandardMaterial({
+    color: 0xde95f9,
+  });
+
+  const playText = new THREE.Mesh(playTextGeometry, textMaterial);
+  const pText = new THREE.Mesh(pTextGeometry, material);
+  const lText = new THREE.Mesh(lTextGeometry, material);
+  const aText = new THREE.Mesh(aTextGeometry, material);
+  const yText = new THREE.Mesh(yTextGeometry, material);
+
+  playText.position.x = -1.5;
+  playText.position.z = -0.5;
+
+  pText.position.set(-1.2, -0.2, -0.5);
+  lText.position.set(-0.5, 0, -0.5);
+  aText.position.set(0.2, 0.2, -0.5);
+  yText.position.set(1, -0.1, -0.5);
+
+  pText.name = "playTextUp";
+  lText.name = "playTextUp";
+  aText.name = "playTextUp";
+  yText.name = "playTextUp";
+
+  // scene.add(playText);
+  scene.add(pText);
+  scene.add(lText);
+  scene.add(aText);
+  scene.add(yText);
+});
+console.log(scene);
 // Lights
 const rectAreaLight = new THREE.RectAreaLight(0xffffff, 1, 5, 5);
 rectAreaLight.position.set(-1, 1, 1.5);
 rectAreaLight.lookAt(0, 0, 0);
 scene.add(rectAreaLight);
 
-const lowerRectAreaLight = new THREE.RectAreaLight(0x0000ff, 5, 5, 2);
+const lowerRectAreaLight = new THREE.RectAreaLight(0xd9759a, 5, 5, 2);
 lowerRectAreaLight.position.set(1, -4, 0);
 lowerRectAreaLight.lookAt(0, 0, 0);
 scene.add(lowerRectAreaLight);
@@ -76,6 +128,7 @@ const hitSound = new Audio("/static/sounds/oof.mp3");
 let health = 3;
 let collidedBricks = [];
 const hitEffects = (collision) => {
+  console.log("hit");
   const impactStrength = collision.contact.getImpactVelocityAlongNormal();
   // if (impactStrength > 1.5) {
   //   hitSound.volume = Math.random();
@@ -164,6 +217,8 @@ function restart() {
 const gltfLoader = new GLTFLoader();
 
 let brickModel = null;
+let brickColorArray = ["#fab4d1", "#b4f4fa", "#fafab4", "#b4fabd"];
+let brickColorArrayIndex = 0;
 function addBrick() {
   gltfLoader.load("/static/models/brick.glb", (gltf) => {
     brickModel = gltf.scene;
@@ -172,6 +227,14 @@ function addBrick() {
     brickModel.scale.set(0.2, 0.2, 0.2);
     brickModel.position.x = (Math.random() - 0.5) * 8;
     brickModel.position.y = 2.2 + Math.random() * (3 - 2.2);
+    brickModel.children[0].material.color.set(
+      brickColorArray[brickColorArrayIndex]
+    );
+    if (brickColorArrayIndex < 3) {
+      brickColorArrayIndex += 1;
+    } else {
+      brickColorArrayIndex = 0;
+    }
     scene.add(brickModel);
 
     const shape = new CANNON.Box(new CANNON.Vec3(0.1, 0.1, 0.1));
@@ -199,7 +262,7 @@ function addBrick() {
 let footModel = null;
 let footObject = null;
 let parameters = {
-  color: "#ffd4a3",
+  color: "#ffffff",
 };
 gltfLoader.load("/static/models/foot.glb", (gltf) => {
   footModel = gltf.scene;
@@ -215,11 +278,10 @@ gltfLoader.load("/static/models/foot.glb", (gltf) => {
   const body = new CANNON.Body({
     position: new CANNON.Vec3(footModel.position.x, -1.6, 0),
     shape: shape,
+    mass: 0,
   });
 
-  body.addEventListener("collide", function (e) {
-    setTimeout(hitEffects(e));
-  });
+  body.addEventListener("collide", hitEffects);
 
   world.addBody(body);
 
@@ -319,7 +381,7 @@ const deleteBlock = () => {
 const cannonDebugger = new CannonDebugger(scene, world);
 
 let oldElapsedTime = 0;
-
+// let textDirectionUp = true;
 const tick = () => {
   const elapsedTime = clock.getElapsedTime();
   const deltaTime = elapsedTime - oldElapsedTime;
@@ -329,9 +391,24 @@ const tick = () => {
   manageBlocks();
 
   // Update controls
-  // controls.update();
+  controls.update();
 
   cannonDebugger.update();
+
+  let sceneArray = scene.children;
+  for (let i = 0; i < sceneArray.length; i++) {
+    let item = sceneArray[i];
+
+    if (item.name === "playTextUp" && item.position.y < 0.2) {
+      item.position.y += 0.005;
+    } else if (item.name === "playTextUp" && item.position.y >= 0.2) {
+      item.name = "playTextDown";
+    } else if (item.name === "playTextDown" && item.position.y > -0.2) {
+      item.position.y -= 0.005;
+    } else if (item.name === "playTextDown" && item.position.y <= -0.2) {
+      item.name = "playTextUp";
+    }
+  }
 
   // Render
   renderer.render(scene, camera);

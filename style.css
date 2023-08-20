@@ -21,12 +21,12 @@ body {
   color: white;
   background-color: #1e1f1f;
   height: 15rem;
-  width: 20rem;
+  width: 15rem;
   z-index: 1;
   position: fixed;
   top: 0;
-  left: 0;
-  border-radius: 0 0 15px 0;
+  right: 0;
+  border-radius: 0 0 0px 15px;
   padding: 5px 20px 5px 20px;
 }
 
