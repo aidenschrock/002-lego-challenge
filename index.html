@@ -7,6 +7,29 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
+    <div id="end-game" class="end-game">
+      <h1>Game Over</h1>
+
+      <button id="restart">Restart</button>
+    </div>
+    <div class="player-info">
+      <div class="health">
+        <div>Health</div>
+        <div class="heart-container">
+          <img id="heart1" class="heart-icon" src="/static/images/heart.png" />
+          <img id="heart2" class="heart-icon" src="/static/images/heart.png" />
+          <img id="heart3" class="heart-icon" src="/static/images/heart.png" />
+        </div>
+      </div>
+      <div class="color-picker">
+        <label for="footcolor">Foot Color</label>
+        <input type="color" id="footcolor" name="footcolor" value="#ffd4a3" />
+      </div>
+      <div class="mute-toggle">
+        <input type="checkbox" id="mute" name="mute" value="mute" />
+        <label for="mute"> Mute Sound</label><br />
+      </div>
+    </div>
     <canvas class="webgl"></canvas>
     <script type="module" src="./script.js"></script>
   </body>

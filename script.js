@@ -5,6 +5,7 @@ import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHel
 import * as dat from "lil-gui";
 import * as CANNON from "cannon-es";
 import CannonDebugger from "cannon-es-debugger";
+import { SRGBColorSpace } from "three";
 
 // Debug
 const gui = new dat.GUI();
@@ -12,8 +13,23 @@ const gui = new dat.GUI();
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
 
+let worldParamaters = {
+  color: new THREE.Color(0xd3c5cb),
+};
 // Scene
 const scene = new THREE.Scene();
+scene.background = worldParamaters.color;
+
+gui.addColor(worldParamaters, "color").onChange(() => {
+  scene.background = worldParamaters.color;
+});
+
+//Load background texture
+// const loader = new THREE.TextureLoader();
+// loader.load("/static/play-mat.jpg", function (texture) {
+//   console.log(texture);
+//   scene.background = texture;
+// });
 
 // Lights
 const rectAreaLight = new THREE.RectAreaLight(0xffffff, 1, 5, 5);
@@ -28,9 +44,9 @@ scene.add(lowerRectAreaLight);
 
 const rectAreaLightHelper = new RectAreaLightHelper(rectAreaLight);
 const lowerRectAreaLightHelper = new RectAreaLightHelper(lowerRectAreaLight);
-scene.add(rectAreaLightHelper);
-scene.add(lowerRectAreaLightHelper);
-gui.add(rectAreaLight, "intensity").min(0).max(5).step(0.02);
+// scene.add(rectAreaLightHelper);
+// scene.add(lowerRectAreaLightHelper);
+// gui.add(rectAreaLight, "intensity").min(0).max(5).step(0.02);
 
 // Physics
 const world = new CANNON.World();
@@ -56,7 +72,23 @@ const objectsToUpdate = [];
 
 // Function to run on collision of foot with brick
 let collidingBrick = null;
+const hitSound = new Audio("/static/sounds/oof.mp3");
+let health = 3;
+let collidedBricks = [];
 const hitEffects = (collision) => {
+  const impactStrength = collision.contact.getImpactVelocityAlongNormal();
+  // if (impactStrength > 1.5) {
+  //   hitSound.volume = Math.random();
+  //   hitSound.currentTime = 0;
+
+  // }
+
+  const muteCheckbox = document.getElementById("mute");
+
+  if (!muteCheckbox.checked) {
+    hitSound.play();
+  }
+
   let sceneArray = scene.children;
 
   for (const object of objectsToUpdate) {
@@ -65,24 +97,75 @@ const hitEffects = (collision) => {
     }
   }
 
+  if (health > 1 && !collidedBricks.includes(collidingBrick.brickId)) {
+    let healthIcon = document.getElementById("heart" + health);
+    healthIcon.src = "/static/images/empty-heart.png";
+    health -= 1;
+    collidedBricks.push(collidingBrick.brickId);
+  } else if (health === 1 && !collidedBricks.includes(collidingBrick.brickId)) {
+    let healthIcon = document.getElementById("heart" + health);
+    healthIcon.src = "/static/images/empty-heart.png";
+    health -= 1;
+    collidedBricks.push(collidingBrick.brickId);
+    endGame();
+  }
+
   for (let i = 0; i < sceneArray.length; i++) {
     if (sceneArray[i].uuid === collidingBrick.brickId) {
-      console.log("here");
-
       collidingBrick.body.removeEventListener("collide", hitEffects);
-      world.removeBody(collidingBrick.body);
+      // world.removeBody(collidingBrick.body);
       // objectsToUpdate.splice(collision.body.id, 1);
       scene.remove(sceneArray[i]);
     }
   }
 };
 
+const endScreen = document.getElementById("end-game");
+// End Game
+function endGame() {
+  endScreen.style.visibility = "visible";
+  footModel.position.y = -5;
+}
+
+let restartButton = document.getElementById("restart");
+restartButton.addEventListener("click", restart);
+// Restart
+function restart() {
+  endScreen.style.visibility = "hidden";
+  /**
+   * clear bricks & brick arrays (collidedBricks, objectsToUpdate)
+   * return foot model to original position
+   * return health to full
+   */
+  footModel.position.y = -1.6;
+  health = 3;
+  let heartCollection = document.getElementsByClassName("heart-icon");
+  let heartArray = [...heartCollection];
+
+  heartArray.map((icon) => {
+    icon.src = "/static/images/heart.png";
+  });
+  collidedBricks = [];
+
+  let sceneArray = scene.children;
+  for (let i = 0; i < sceneArray.length; i++) {
+    if (sceneArray[i].name === "brick") {
+      scene.remove(sceneArray[i]);
+    }
+  }
+  for (let j = 0; j < objectsToUpdate.length; j++) {
+    objectsToUpdate[j].body.removeEventListener("collide", hitEffects);
+    world.removeBody(objectsToUpdate[j].body);
+  }
+  objectsToUpdate = [];
+}
+
 // GLTF Loader
 const gltfLoader = new GLTFLoader();
 
 let brickModel = null;
 function addBrick() {
-  gltfLoader.load("/static/brick.glb", (gltf) => {
+  gltfLoader.load("/static/models/brick.glb", (gltf) => {
     brickModel = gltf.scene;
     brickModel.name = "brick";
     brickModel.rotation.x = -3;
@@ -115,21 +198,29 @@ function addBrick() {
 
 let footModel = null;
 let footObject = null;
-gltfLoader.load("/static/foot.glb", (gltf) => {
+let parameters = {
+  color: "#ffd4a3",
+};
+gltfLoader.load("/static/models/foot.glb", (gltf) => {
   footModel = gltf.scene;
   footModel.scale.set(0.2, 0.2, 0.2);
   footModel.rotation.y = 1.4;
   footModel.position.y = -1.6;
+  footModel.children[0].material.color.set(parameters.color);
+
   scene.add(footModel);
 
   const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.1, 0.2));
+
   const body = new CANNON.Body({
     position: new CANNON.Vec3(footModel.position.x, -1.6, 0),
     shape: shape,
   });
+
   body.addEventListener("collide", function (e) {
     setTimeout(hitEffects(e));
   });
+
   world.addBody(body);
 
   let footId = footModel.uuid;
@@ -146,6 +237,11 @@ window.addEventListener("keydown", (event) => {
     footModel.position.x += 0.2;
     footObject.body.position.copy(footModel.position);
   }
+});
+
+const color = document.getElementById("footcolor");
+color.addEventListener("input", (event) => {
+  footModel.children[0].material.color.set(event.target.value);
 });
 
 // Sizes
@@ -233,7 +329,7 @@ const tick = () => {
   manageBlocks();
 
   // Update controls
-  controls.update();
+  // controls.update();
 
   cannonDebugger.update();
 
