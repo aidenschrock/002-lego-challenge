@@ -11,7 +11,7 @@ import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
 
 // Debug
-const gui = new dat.GUI();
+// const gui = new dat.GUI();
 
 // Canvas
 const canvas = document.querySelector("canvas.webgl");
@@ -23,9 +23,9 @@ let worldParamaters = {
 const scene = new THREE.Scene();
 scene.background = worldParamaters.color;
 
-gui.addColor(worldParamaters, "color").onChange(() => {
-  scene.background = worldParamaters.color;
-});
+// gui.addColor(worldParamaters, "color").onChange(() => {
+//   scene.background = worldParamaters.color;
+// });
 
 // Background Text
 const textureLoader = new THREE.TextureLoader();
@@ -120,7 +120,7 @@ world.addContactMaterial(defaultContactMaterial);
 world.defaultContactMaterial = defaultContactMaterial;
 
 // Initialize array for brick models
-const objectsToUpdate = [];
+let objectsToUpdate = [];
 
 // Function to run on collision of foot with brick
 let collidingBrick = null;
@@ -138,10 +138,6 @@ const hitEffects = (collision) => {
 
   const muteCheckbox = document.getElementById("mute");
 
-  if (!muteCheckbox.checked) {
-    hitSound.play();
-  }
-
   let sceneArray = scene.children;
 
   for (const object of objectsToUpdate) {
@@ -154,11 +150,19 @@ const hitEffects = (collision) => {
     let healthIcon = document.getElementById("heart" + health);
     healthIcon.src = "/static/images/empty-heart.png";
     health -= 1;
+    if (!muteCheckbox.checked) {
+      hitSound.play();
+    }
+
     collidedBricks.push(collidingBrick.brickId);
   } else if (health === 1 && !collidedBricks.includes(collidingBrick.brickId)) {
     let healthIcon = document.getElementById("heart" + health);
     healthIcon.src = "/static/images/empty-heart.png";
     health -= 1;
+    if (!muteCheckbox.checked) {
+      hitSound.play();
+    }
+
     collidedBricks.push(collidingBrick.brickId);
     endGame();
   }
@@ -178,6 +182,7 @@ const endScreen = document.getElementById("end-game");
 function endGame() {
   endScreen.style.visibility = "visible";
   footModel.position.y = -5;
+  footObject.body.position.y = -5;
 }
 
 let restartButton = document.getElementById("restart");
@@ -191,6 +196,7 @@ function restart() {
    * return health to full
    */
   footModel.position.y = -1.6;
+  footObject.body.y = -1.6;
   health = 3;
   let heartCollection = document.getElementsByClassName("heart-icon");
   let heartArray = [...heartCollection];
