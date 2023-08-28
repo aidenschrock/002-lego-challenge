@@ -9,6 +9,8 @@ import { SRGBColorSpace } from "three";
 import typefaceFont from "three/examples/fonts/helvetiker_regular.typeface.json";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
+// import BrickModel from "/models/brick.glb";
+// import FootModel from "./static/models/foot.glb";
 
 // Debug
 // const gui = new dat.GUI();
@@ -31,10 +33,10 @@ scene.background = worldParamaters.color;
 const textureLoader = new THREE.TextureLoader();
 const fontLoader = new FontLoader();
 const material = new THREE.MeshMatcapMaterial();
-const matcapTexture = textureLoader.load("/static/matcaps/4.png");
+const matcapTexture = textureLoader.load("/matcaps/4.png");
 material.matcap = matcapTexture;
 
-fontLoader.load("/static/fonts/brix.typeface.json", (font) => {
+fontLoader.load("/fonts/brix.typeface.json", (font) => {
   const textConfig = {
     font: font,
     size: 0.5,
@@ -124,7 +126,7 @@ let objectsToUpdate = [];
 
 // Function to run on collision of foot with brick
 let collidingBrick = null;
-const hitSound = new Audio("/static/sounds/oof.mp3");
+const hitSound = new Audio("/sounds/oof.mp3");
 let health = 3;
 let collidedBricks = [];
 const hitEffects = (collision) => {
@@ -140,7 +142,7 @@ const hitEffects = (collision) => {
 
   if (health > 1 && !collidedBricks.includes(collidingBrick.brickId)) {
     let healthIcon = document.getElementById("heart" + health);
-    healthIcon.src = "/static/images/empty-heart.png";
+    healthIcon.src = "/images/empty-heart.png";
     health -= 1;
     if (!muteCheckbox.checked) {
       hitSound.play();
@@ -149,7 +151,7 @@ const hitEffects = (collision) => {
     collidedBricks.push(collidingBrick.brickId);
   } else if (health === 1 && !collidedBricks.includes(collidingBrick.brickId)) {
     let healthIcon = document.getElementById("heart" + health);
-    healthIcon.src = "/static/images/empty-heart.png";
+    healthIcon.src = "/images/empty-heart.png";
     health -= 1;
     if (!muteCheckbox.checked) {
       hitSound.play();
@@ -190,7 +192,7 @@ function restart() {
   let heartArray = [...heartCollection];
 
   heartArray.map((icon) => {
-    icon.src = "/static/images/heart.png";
+    icon.src = "/images/heart.png";
   });
   collidedBricks = [];
 
@@ -214,7 +216,7 @@ let brickModel = null;
 let brickColorArray = ["#fab4d1", "#b4f4fa", "#fafab4", "#b4fabd"];
 let brickColorArrayIndex = 0;
 function addBrick() {
-  gltfLoader.load("/static/models/brick.glb", (gltf) => {
+  gltfLoader.load("/models/brick.glb", (gltf) => {
     brickModel = gltf.scene;
     brickModel.name = "brick";
     brickModel.rotation.x = -3;
@@ -258,7 +260,7 @@ let footObject = null;
 let parameters = {
   color: "#ccfeff",
 };
-gltfLoader.load("/static/models/foot.glb", (gltf) => {
+gltfLoader.load("/models/foot.glb", (gltf) => {
   footModel = gltf.scene;
   footModel.scale.set(0.2, 0.2, 0.2);
   footModel.rotation.y = 1.4;
