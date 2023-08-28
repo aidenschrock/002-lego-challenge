@@ -1,5 +1,6 @@
 import Experience from "../Experience.js";
 import * as THREE from "three";
+import * as CANNON from "cannon-es";
 
 export default class Foot {
   constructor() {
@@ -8,6 +9,7 @@ export default class Foot {
     this.resources = this.experience.resources;
     this.time = this.experience.time;
     this.debug = this.experience.debug;
+    this.physicsWorld = this.experience.world.physicsWorld;
 
     // Debug
     if (this.debug.active) {
@@ -29,11 +31,23 @@ export default class Foot {
     this.model.children[0].material.color.set(this.parameters.color);
     this.scene.add(this.model);
 
-    this.model.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.castShadow = true;
-      }
+    const shape = new CANNON.Box(new CANNON.Vec3(0.6, 0.1, 0.2));
+
+    const body = new CANNON.Body({
+      position: new CANNON.Vec3(this.model.position.x, -1.6, 0),
+      shape: shape,
+      mass: 0,
     });
+
+    // body.addEventListener("collide", hitEffects);
+
+    this.physicsWorld.addBody(body);
+
+    // this.model.traverse((child) => {
+    //   if (child instanceof THREE.Mesh) {
+    //     child.castShadow = true;
+    //   }
+    // });
   }
 
   update() {
