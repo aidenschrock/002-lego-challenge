@@ -82,7 +82,7 @@ fontLoader.load("/static/fonts/brix.typeface.json", (font) => {
   scene.add(aText);
   scene.add(yText);
 });
-console.log(scene);
+
 // Lights
 const rectAreaLight = new THREE.RectAreaLight(0xffffff, 1, 5, 5);
 rectAreaLight.position.set(-1, 1, 1.5);
@@ -128,14 +128,6 @@ const hitSound = new Audio("/static/sounds/oof.mp3");
 let health = 3;
 let collidedBricks = [];
 const hitEffects = (collision) => {
-  console.log("hit");
-  const impactStrength = collision.contact.getImpactVelocityAlongNormal();
-  // if (impactStrength > 1.5) {
-  //   hitSound.volume = Math.random();
-  //   hitSound.currentTime = 0;
-
-  // }
-
   const muteCheckbox = document.getElementById("mute");
 
   let sceneArray = scene.children;
@@ -190,11 +182,7 @@ restartButton.addEventListener("click", restart);
 // Restart
 function restart() {
   endScreen.style.visibility = "hidden";
-  /**
-   * clear bricks & brick arrays (collidedBricks, objectsToUpdate)
-   * return foot model to original position
-   * return health to full
-   */
+
   footModel.position.y = -1.6;
   footObject.body.y = -1.6;
   health = 3;
@@ -268,7 +256,7 @@ function addBrick() {
 let footModel = null;
 let footObject = null;
 let parameters = {
-  color: "#ffffff",
+  color: "#ccfeff",
 };
 gltfLoader.load("/static/models/foot.glb", (gltf) => {
   footModel = gltf.scene;
@@ -399,7 +387,8 @@ const tick = () => {
   // Update controls
   controls.update();
 
-  cannonDebugger.update();
+  // physics debugger
+  // cannonDebugger.update();
 
   let sceneArray = scene.children;
   for (let i = 0; i < sceneArray.length; i++) {
