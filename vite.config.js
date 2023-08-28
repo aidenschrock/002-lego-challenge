@@ -9,7 +9,7 @@ export default {
     open: !isCodeSandbox, // Open if it's not a CodeSandbox
   },
   build: {
-    outDir: "../dist",
+    outDir: "/dist",
     emptyOutDir: true,
     sourcemap: true,
   },
