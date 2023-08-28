@@ -5,12 +5,8 @@ import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHel
 import * as dat from "lil-gui";
 import * as CANNON from "cannon-es";
 import CannonDebugger from "cannon-es-debugger";
-import { SRGBColorSpace } from "three";
-import typefaceFont from "three/examples/fonts/helvetiker_regular.typeface.json";
 import { FontLoader } from "three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "three/examples/jsm/geometries/TextGeometry.js";
-// import BrickModel from "/models/brick.glb";
-// import FootModel from "./static/models/foot.glb";
 
 // Debug
 // const gui = new dat.GUI();
@@ -41,12 +37,6 @@ fontLoader.load("/fonts/brix.typeface.json", (font) => {
     font: font,
     size: 0.5,
     height: 0.2,
-    // curveSegments: 10,
-    // bevelEnabled: true,
-    // bevelThickness: 0.03,
-    // bevelSize: 0.02,
-    // bevelOffset: 0,
-    // bevelSegments: 3,
   };
 
   const playTextGeometry = new TextGeometry("P L A Y", textConfig);
@@ -164,8 +154,8 @@ const hitEffects = (collision) => {
   for (let i = 0; i < sceneArray.length; i++) {
     if (sceneArray[i].uuid === collidingBrick.brickId) {
       collidingBrick.body.removeEventListener("collide", hitEffects);
-      // world.removeBody(collidingBrick.body);
-      // objectsToUpdate.splice(collision.body.id, 1);
+      world.removeBody(collidingBrick.body);
+      objectsToUpdate.splice(collision.body.id, 1);
       scene.remove(sceneArray[i]);
     }
   }
