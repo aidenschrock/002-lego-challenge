@@ -8,9 +8,9 @@ export default {
     host: true,
     open: !isCodeSandbox, // Open if it's not a CodeSandbox
   },
-  //   build: {
-  //     outDir: "/dist",
-  //     emptyOutDir: true,
-  //     sourcemap: true,
-  //   },
+  build: {
+    outDir: "dist",
+    emptyOutDir: true,
+    sourcemap: true,
+  },
 };
