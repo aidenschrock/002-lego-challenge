@@ -355,7 +355,7 @@ const deleteBlock = () => {
       for (let j = 0; j < objectsToUpdate.length; j++) {
         if (objectsToUpdate[j].brickId === sceneArray[i].uuid) {
           objectsToUpdate[j].body.removeEventListener("collide", hitEffects);
-          world.removeBody(objectsToUpdate[j].body);
+          // world.removeBody(objectsToUpdate[j].body);
           objectsToUpdate.splice(j, 1);
         }
       }
