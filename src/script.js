@@ -151,14 +151,14 @@ const hitEffects = (collision) => {
     endGame();
   }
 
-  for (let i = 0; i < sceneArray.length; i++) {
-    if (sceneArray[i].uuid === collidingBrick.brickId) {
-      collidingBrick.body.removeEventListener("collide", hitEffects);
-      world.removeBody(collidingBrick.body);
-      objectsToUpdate.splice(collision.body.id, 1);
-      scene.remove(sceneArray[i]);
-    }
-  }
+  // for (let i = 0; i < sceneArray.length; i++) {
+  //   if (sceneArray[i].uuid === collidingBrick.brickId) {
+  //     collidingBrick.body.removeEventListener("collide", hitEffects);
+  //     world.removeBody(collidingBrick.body);
+  //     objectsToUpdate.splice(collision.body.id, 1);
+  //     scene.remove(sceneArray[i]);
+  //   }
+  // }
 };
 
 const endScreen = document.getElementById("end-game");
